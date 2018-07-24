@@ -89,11 +89,11 @@ class Model_CNN:
         self.pooled3 = tf.reshape(self.h_conv3, shape=[-1, int(self.duration - 2), 5])
         self.pooled3 = tf.reduce_mean(self.pooled3, reduction_indices=2)
         self.pooled3 = tf.squeeze(self.pooled3)
-
+        '''
         self.pooled4 = tf.reshape(self.h_conv4, shape=[-1, int(self.duration - 3), 5])
         self.pooled4 = tf.reduce_mean(self.pooled4, reduction_indices=2)
         self.pooled4 = tf.squeeze(self.pooled4)
-
+        '''
         '''
         self.pooled1_flatten = tf.reshape(self.h_conv1,shape=[-1,int(self.duration)*5])
         self.pooled2_flatten = tf.reshape(self.h_conv2,shape=[-1,int(self.duration-1)*5])
@@ -102,12 +102,13 @@ class Model_CNN:
         '''
 
 
-        self.pooled1_flatten = tf.reshape(self.pooled1,shape=[-1,self.duration])
+        #self.pooled1_flatten = tf.reshape(self.pooled1,shape=[-1,self.duration])
         self.pooled2_flatten = tf.reshape(self.pooled2,shape=[-1,self.duration-1])
         self.pooled3_flatten = tf.reshape(self.pooled3, shape=[-1, self.duration - 2])
-        self.pooled4_flatten = tf.reshape(self.pooled4, shape=[-1, self.duration - 3])
+        #self.pooled4_flatten = tf.reshape(self.pooled4, shape=[-1, self.duration - 3])
 
-        self.flatten = tf.concat([self.pooled1_flatten,self.pooled2_flatten,self.pooled3_flatten,self.pooled4_flatten],1)
+        #self.flatten = tf.concat([self.pooled1_flatten,self.pooled2_flatten,self.pooled3_flatten,self.pooled4_flatten],1)
+        self.flatten = tf.concat([self.pooled2_flatten,self.pooled3_flatten],1)
 
         num_unit = 300
         H = self.linear(self.flatten,self.flatten.shape[1],num_unit,'L1')

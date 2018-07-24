@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from dataset_loader import Dataset_loader
 from model_cnn_regression3 import Model_CNN
+from tqdm import tqdm
 
 class Trainer:
     def __init__(self):
@@ -13,7 +14,7 @@ class Trainer:
 
         #dataset
         self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =6)
-        self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = False)
+        self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = True)
 
         print(len(self.trainset))
         print(len(self.testset))
@@ -109,8 +110,17 @@ class Trainer:
         # 3.2. train loop
         #===============================================
             for e in range(self.totalEpoch):
+                '''
                 p = np.random.permutation(len(self.trainset))
                 self.trainset = np.array(self.trainset)[p]
+                '''
+                shuffle_chunksize = 1
+                p = np.random.permutation(int(len(self.trainset) / shuffle_chunksize))
+                p2 = []
+                for p_ in p:
+                    for i in range(shuffle_chunksize):
+                        p2.append(p_ * shuffle_chunksize + i)
+                self.trainset = np.array(self.trainset)[p2]
             # ..........................
             # 3.2.1 학습
             # .........................
@@ -118,17 +128,16 @@ class Trainer:
                 loss_list = []
                 tloss_list = []
                 train_accuracy_list = []
-                for i in range(int(len(self.trainset) / self.batchSize)):
+                for i in tqdm(range(int(len(self.trainset) / self.batchSize))):
                     # == batch load
                     batch_x = np.array([self.trainset[b].get2DShapeInput()  for b in range(i*self.batchSize,(i+1)*self.batchSize)])
                     batch_y = np.array([self.trainset[b].pv_label  for b in range(i*self.batchSize,(i+1)*self.batchSize)]).reshape(self.batchSize,-1)
 
                     # == train
-                    sess.run(train_step, feed_dict={self.model.X: batch_x, self.Y: batch_y,self.model.trainphase:True})
+                    loss_print, tloss_print,_ = sess.run([loss,tloss,train_step], feed_dict={self.model.X: batch_x, self.Y: batch_y,self.model.trainphase:True})
 
 
                     # == logging
-                    loss_print,tloss_print = sess.run([loss,tloss],feed_dict={self.model.X: batch_x, self.Y: batch_y,self.model.trainphase:True })
                     loss_list.append(loss_print)
                     tloss_list.append(tloss_print)
                 print("반복(Epoch):", e, "트레이닝 데이터 정확도:", np.mean(train_accuracy_list), "손실 함수(loss):",

@@ -13,7 +13,7 @@ class Trainer:
 
 
         #dataset
-        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =6,attList=[5,6,7,8,9])
+        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =12,attList=[5,6,7,8,9])
         self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = False)
 
         print(len(self.trainset))

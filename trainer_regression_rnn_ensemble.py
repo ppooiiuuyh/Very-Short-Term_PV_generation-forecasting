@@ -13,7 +13,7 @@ class Trainer:
 
 
         #dataset
-        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =6,attList=[5,6,7,8,9])
+        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =24*21,attList=[5,6,7,8,9])
         self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = False)
 
         print(len(self.trainset))
@@ -22,7 +22,7 @@ class Trainer:
         #model tensor :
         self.numClasses = 1
 
-        self.nummodels = 5
+        self.nummodels = 3
         self.X = tf.placeholder(tf.float32, shape=[None, self.dataset_loader.duration, self.dataset_loader.num_attribute])  # None,step,input
         models_logit = []
         for i in range(self.nummodels):
@@ -104,14 +104,14 @@ class Trainer:
 
             loss_hist_summary = tf.summary.scalar('training_loss_hist', loss)
             merged = tf.summary.merge_all()
-            writer_acc_loss = tf.summary.FileWriter("./board_rrnw_tl_rnnshort/acc_loss", sess.graph)
+            writer_acc_loss = tf.summary.FileWriter("./board_rs_ensemble/acc_loss", sess.graph)
 
             prediction_hist = tf.placeholder(tf.float32)
             prediction_hist_summary = tf.summary.scalar('pred_hist', prediction_hist)
             prediction_hist_merged = tf.summary.merge([prediction_hist_summary])
 
-            writer_pred = tf.summary.FileWriter("./board_rrnw_tl_rnnshort/pred", sess.graph)
-            writer_pred_label = tf.summary.FileWriter("./board_rrnw_tl_rnnshort/pred_label", sess.graph)
+            writer_pred = tf.summary.FileWriter("./board_rs_ensemble/pred", sess.graph)
+            writer_pred_label = tf.summary.FileWriter("./board_rs_ensemble/pred_label", sess.graph)
 
 
         #===============================================
@@ -170,8 +170,8 @@ class Trainer:
                 tloss_list = []
                 histloginterval = 100
                 if (e % histloginterval == 0):
-                    writer_pred = tf.summary.FileWriter("./board_rrnw_tl_rnnshort/pred" + str(e), sess.graph)
-                    writer_pred_label = tf.summary.FileWriter("./board_rrnw_tl_rnnshort/pred_label" + str(e), sess.graph)
+                    writer_pred = tf.summary.FileWriter("./board_rs_ensemble/pred" + str(e), sess.graph)
+                    writer_pred_label = tf.summary.FileWriter("./board_rs_ensemble/pred_label" + str(e), sess.graph)
 
                 for i in range(int(len(self.testset) / self.batchSize_test)):
                     # == test batch load

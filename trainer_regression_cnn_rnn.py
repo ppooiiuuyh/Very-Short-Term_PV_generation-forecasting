@@ -4,7 +4,7 @@ from dataset_loader import Dataset_loader
 from model_rnn_regression import Model_RNN
 from model_cnn_regression3 import Model_CNN
 from tensorflow.contrib.layers import xavier_initializer
-
+from tqdm import tqdm
 
 class Trainer:
     def __init__(self):
@@ -15,8 +15,8 @@ class Trainer:
 
 
         #dataset
-        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2016_gs_processed.csv",timestep_interval =4,duration_hour =6,duration_hour_long=24*21)
-        self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = True)
+        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =6,duration_hour_long=24*21)
+        self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = False)
 
 
         print(len(self.trainset))
@@ -30,7 +30,9 @@ class Trainer:
         print(self.concated_features)
 
         self.W = tf.get_variable(name ='weights',shape=[self.concated_features.shape[1],1], initializer=xavier_initializer())
-        self.model_logits = tf.matmul(self.concated_features,self.W)
+        self.B = tf.get_variable(name='weights_b', shape=[1], initializer=xavier_initializer())
+
+        self.model_logits = tf.matmul(self.concated_features,self.W)*self.B
         self.Y = tf.placeholder(tf.float32, shape=[None,1])
 
 
@@ -55,7 +57,7 @@ class Trainer:
             y_t = tf.slice(self.Y,[0,0],[self.batchSize-1,1]) - tf.slice(self.Y,[1,0],[self.batchSize-1,1])
             ypred_t = tf.slice(self.model_logits, [0, 0], [self.batchSize - 1, 1]) - tf.slice(self.model_logits, [1, 0],
                                                                                [self.batchSize - 1, 1])
-            tlossrate = 0.1
+            tlossrate = 0
             tloss = tf.reduce_mean(tf.abs(y_t-ypred_t))
 
         with tf.name_scope("trainer") as scope:
@@ -100,14 +102,14 @@ class Trainer:
 
             loss_hist_summary = tf.summary.scalar('training_loss_hist', loss)
             merged = tf.summary.merge_all()
-            writer_acc_loss = tf.summary.FileWriter("./board_rrnw_tl1/acc_loss", sess.graph)
+            writer_acc_loss = tf.summary.FileWriter("./board_cnn_rnn_long/acc_loss", sess.graph)
 
             prediction_hist = tf.placeholder(tf.float32)
             prediction_hist_summary = tf.summary.scalar('pred_hist', prediction_hist)
             prediction_hist_merged = tf.summary.merge([prediction_hist_summary])
 
-            writer_pred = tf.summary.FileWriter("./board_rrnw_tl1/pred", sess.graph)
-            writer_pred_label = tf.summary.FileWriter("./board_rrnw_tl1/pred_label", sess.graph)
+            writer_pred = tf.summary.FileWriter("./board_cnn_rnn_long/pred", sess.graph)
+            writer_pred_label = tf.summary.FileWriter("./board_cnn_rnn_long/pred_label", sess.graph)
 
 
         #===============================================
@@ -121,7 +123,7 @@ class Trainer:
                 loss_list = []
                 tloss_list = []
                 train_accuracy_list = []
-                for i in range(int(len(self.trainset) / self.batchSize)):
+                for i in tqdm(range(int(len(self.trainset) / self.batchSize))):
                     # == batch load
                     batch_x = np.array([self.trainset[b].get2DShapeInput()  for b in range(i*self.batchSize,(i+1)*self.batchSize)])
                     batch_x_long = np.array([np.squeeze(self.trainset[b].get2DShapeInput_long(),axis=-1)  for b in range(i*self.batchSize,(i+1)*self.batchSize)])
@@ -150,8 +152,8 @@ class Trainer:
                 tloss_list = []
                 histloginterval = 100
                 if (e % histloginterval == 0):
-                    writer_pred = tf.summary.FileWriter("./board_rrnw_tl1/pred" + str(e), sess.graph)
-                    writer_pred_label = tf.summary.FileWriter("./board_rrnw_tl1/pred_label" + str(e), sess.graph)
+                    writer_pred = tf.summary.FileWriter("./board_cnn_rnn_long/pred" + str(e), sess.graph)
+                    writer_pred_label = tf.summary.FileWriter("./board_cnn_rnn_long/pred_label" + str(e), sess.graph)
 
                 for i in range(int(len(self.testset) / self.batchSize_test)):
                     # == test batch load

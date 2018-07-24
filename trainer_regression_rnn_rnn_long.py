@@ -29,7 +29,9 @@ class Trainer:
         print(self.concated_features)
 
         self.W = tf.get_variable(name ='weights',shape=[self.concated_features.shape[1],1], initializer=xavier_initializer())
-        self.model_logits = tf.matmul(self.concated_features,self.W)
+        self.B = tf.get_variable(name='weights_b', shape=[1], initializer=xavier_initializer())
+
+        self.model_logits = tf.matmul(self.concated_features,self.W)*self.B
         self.model_logits_relu = tf.nn.relu(self.model_logits)
         self.Y = tf.placeholder(tf.float32, shape=[None,1])
 
@@ -100,14 +102,14 @@ class Trainer:
 
             loss_hist_summary = tf.summary.scalar('training_loss_hist', loss)
             merged = tf.summary.merge_all()
-            writer_acc_loss = tf.summary.FileWriter("./board_rrnw_tl1/acc_loss", sess.graph)
+            writer_acc_loss = tf.summary.FileWriter("./board_rrn_rnn_long/acc_loss", sess.graph)
 
             prediction_hist = tf.placeholder(tf.float32)
             prediction_hist_summary = tf.summary.scalar('pred_hist', prediction_hist)
             prediction_hist_merged = tf.summary.merge([prediction_hist_summary])
 
-            writer_pred = tf.summary.FileWriter("./board_rrnw_tl1/pred", sess.graph)
-            writer_pred_label = tf.summary.FileWriter("./board_rrnw_tl1/pred_label", sess.graph)
+            writer_pred = tf.summary.FileWriter("./board_rrnw_rrn_rnn_long/pred", sess.graph)
+            writer_pred_label = tf.summary.FileWriter("./board_rrn_rnn_long/pred_label", sess.graph)
 
 
         #===============================================
@@ -170,8 +172,8 @@ class Trainer:
                 tloss_list = []
                 histloginterval = 100
                 if (e % histloginterval == 0):
-                    writer_pred = tf.summary.FileWriter("./board_rrnw_tl1/pred" + str(e), sess.graph)
-                    writer_pred_label = tf.summary.FileWriter("./board_rrnw_tl1/pred_label" + str(e), sess.graph)
+                    writer_pred = tf.summary.FileWriter("./board_rrnw_rrn_rnn_long/pred" + str(e), sess.graph)
+                    writer_pred_label = tf.summary.FileWriter("./board_rrnw_rrn_rnn_long/pred_label" + str(e), sess.graph)
 
                 for i in range(int(len(self.testset) / self.batchSize_test)):
                     # == test batch load
@@ -192,7 +194,7 @@ class Trainer:
                     loss_list.append(loss_print)
                     tloss_list.append(tloss_print)
 
-                    '''
+
                     if (e % histloginterval == 0):
                         for o in range(len(test_batch_y)):
                             output = self.model_logits.eval(
@@ -214,7 +216,7 @@ class Trainer:
                                accuracy_s_hist: np.mean(test_accuracy_s_list)})
                 writer_acc_loss.add_summary(summary, global_step=e)
                 writer_acc_loss.flush()
-                '''
+
                 print("테스트 데이터 정확도:", np.mean(test_accuracy_list), "손실 함수(loss):", np.mean(loss_list),"tloss:", np.mean(tloss_list))
                 print()
 
