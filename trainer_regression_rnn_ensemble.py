@@ -7,13 +7,13 @@ from tqdm import tqdm
 class Trainer:
     def __init__(self):
         #parameters
-        self.totalEpoch = 8000
-        self.batchSize = 128
-        self.batchSize_test = 128
+        self.totalEpoch = 5000
+        self.batchSize = 64
+        self.batchSize_test = 64
 
 
         #dataset
-        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =24*21,attList=[5,6,7,8,9])
+        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =24*7,attList=[5,6,7,8,9])
         self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = False)
 
         print(len(self.trainset))

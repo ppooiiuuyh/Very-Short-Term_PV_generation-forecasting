@@ -28,7 +28,7 @@ class Data:
         return input
 
 class Dataset_loader:
-    def __init__(self,pvdir,trainset_ratio = 0.7,duration_hour =6,duration_hour_long = 24*21,attList =[5,6,7,8,9], attList_long = [5,6,7,8,9]):
+    def __init__(self,pvdir,trainset_ratio = 0.7,duration_hour =6,duration_hour_long = 24*21, attList =[5,6,7,8,9], attList_long = [5,6,7,8,9]):
         self.duration = duration_hour
         self.duration_long = duration_hour_long
 
@@ -42,7 +42,6 @@ class Dataset_loader:
         self.pv_normalized = self.attwise_normalization(copy.deepcopy(self.pv)).astype(float)
 
         self.dataset = self.genDataset()
-
 
     def attwise_normalization(self,arr):
         print(np.max(arr,axis=0))
@@ -66,16 +65,30 @@ class Dataset_loader:
         return dataset
 
 
-    def getDataset(self,shuffle = False):
+    def getDataset(self,shuffle = False,seed = 10, batch_size=64):
         trainset = []
         testset = []
 
         if(shuffle == True):
-            p = np.random.permutation(len(self.dataset))
-            self.dataset = np.array(self.dataset)[p]
+            np.random.seed(seed)
 
+            shuffle_chunksize = batch_size
+            p = np.random.permutation(int(len(self.dataset) / shuffle_chunksize))
+            p2 = []
+            for p_ in p:
+                for i in range(shuffle_chunksize):
+                    p2.append(p_ * shuffle_chunksize + i)
+            self.dataset = np.array(self.dataset)[p2]
+
+
+            self.dataset = np.array(self.dataset)[p2]
+            p = np.random.permutation(len(self.dataset))
+
+
+
+        testset_size = 1500  -  1500%batch_size
         for e, d in enumerate(self.dataset):
-            if (e < len(self.dataset) - 1000):
+            if (e < len(self.dataset) - (testset_size) ):
                 trainset.append(d)
             else:
                 testset.append(d)

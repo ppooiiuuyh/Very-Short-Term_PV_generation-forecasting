@@ -15,8 +15,8 @@ class Trainer:
 
 
         #dataset
-        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =6,duration_hour_long=24*21)
-        self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = False)
+        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =6,duration_hour_long=24*7)
+        self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = True)
 
 
         print(len(self.trainset))
@@ -81,7 +81,7 @@ class Trainer:
     # ===================== main =======================
     # Option set config
     # ==================================================
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.40)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.10)
         run_config = tf.ConfigProto()
         run_config.gpu_options.allow_growth = True
 
@@ -131,11 +131,11 @@ class Trainer:
                     batch_y = np.array([self.trainset[b].pv_label  for b in range(i*self.batchSize,(i+1)*self.batchSize)]).reshape(self.batchSize,-1)
 
                     # == train
-                    sess.run(train_step, feed_dict={self.cnn.X: batch_x,self.rnn_long.X: batch_x_long, self.Y: batch_y, self.cnn.trainphase: True})
+                    loss_print, tloss_print,_ = sess.run([loss,tloss,train_step], feed_dict={self.cnn.X: batch_x,self.rnn_long.X: batch_x_long, self.Y: batch_y, self.cnn.trainphase: True})
 
 
                     # == logging
-                    loss_print,tloss_print = sess.run([loss,tloss],feed_dict={self.cnn.X: batch_x,self.rnn_long.X: batch_x_long, self.Y: batch_y, self.cnn.trainphase: False})
+
                     loss_list.append(loss_print)
                     tloss_list.append(tloss_print)
                 print("반복(Epoch):", e, "트레이닝 데이터 정확도:", np.mean(train_accuracy_list), "손실 함수(loss):",

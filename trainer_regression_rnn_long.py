@@ -9,13 +9,13 @@ class Trainer:
     def __init__(self):
         #parameters
         self.totalEpoch = 5000
-        self.batchSize = 128
-        self.batchSize_test = 128
+        self.batchSize = 64
+        self.batchSize_test = 64
 
 
         #dataset
-        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour_long =24*21,attList_long=[5,6,7,8,9])
-        self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = True)
+        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour_long =24*7,attList_long=[5,6,7,8,9])
+        self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = True,batch_size = self.batchSize)
 
         print(len(self.trainset))
         print(len(self.testset))

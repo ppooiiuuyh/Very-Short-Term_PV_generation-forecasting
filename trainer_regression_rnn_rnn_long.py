@@ -8,14 +8,14 @@ from tqdm import tqdm
 class Trainer:
     def __init__(self):
         #parameters
-        self.totalEpoch = 8000
-        self.batchSize = 128
-        self.batchSize_test = 128
+        self.totalEpoch = 5000
+        self.batchSize = 64
+        self.batchSize_test = 64
 
 
         #dataset
-        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =6,duration_hour_long=24*21)
-        self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = False)
+        self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =6,duration_hour_long=24*7)
+        self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = True,batch_size = self.batchSize)
 
 
         print(len(self.trainset))
@@ -81,7 +81,7 @@ class Trainer:
     # ===================== main =======================
     # Option set config
     # ==================================================
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.40)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.10)
         run_config = tf.ConfigProto()
         run_config.gpu_options.allow_growth = True
 
