@@ -52,9 +52,9 @@ class Trainer:
             lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in vars]) * 0.0005
 
         with tf.name_scope("tendancy_loss") as scope:
-            y_t = tf.slice(self.Y,[0,0],[self.batchSize-1,1]) - tf.slice(self.Y,[1,0],[self.batchSize-1,1])
-            ypred_t = tf.slice(self.ensembled_logit, [0, 0], [self.batchSize - 1, 1]) - tf.slice(self.ensembled_logit, [1, 0],
-                                                                               [self.batchSize - 1, 1])
+            y_t = tf.strided_slice(self.Y,[0,0],[self.batchSize-1,1],strides =[2,1]) - tf.strided_slice(self.Y,[1,0],[self.batchSize,1],strides=[2,1])
+            ypred_t = tf.strided_slice(self.model.logits, [0, 0], [self.batchSize - 1, 1],strides=[2,1]) - tf.strided_slice(self.model.logits, [1, 0],
+                                                                               [self.batchSize, 1],strides=[2,1])
             tlossrate = 0
             tloss = tf.reduce_mean(tf.abs(y_t-ypred_t))
 

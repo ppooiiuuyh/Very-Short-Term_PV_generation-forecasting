@@ -9,32 +9,39 @@ class Trainer:
     def __init__(self):
         #parameters
         self.totalEpoch = 5000
-        self.batchSize = 64
-        self.batchSize_test = 64
+        self.batchSize = 128
+        self.batchSize_test = 128
 
 
         #dataset
         self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =6,duration_hour_long=24*7)
         self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = True,batch_size = self.batchSize)
 
-
+        print("rnn_,rnn_long 64 64")
         print(len(self.trainset))
         print(len(self.testset))
 
         #model tensor :
         self.numClasses = 1
-        self.rnn = Model_RNN(input_dim = self.dataset_loader.num_attribute,output_dim = self.numClasses,duration=self.dataset_loader.duration,modelname="shortRNN")
-        self.rnn_long = Model_RNN(input_dim = self.dataset_loader.num_attribute_long,output_dim = self.numClasses,duration=self.dataset_loader.duration_long,modelname="longRNN")
+        self.rnn = Model_RNN(input_dim = self.dataset_loader.num_attribute,output_dim = self.numClasses,duration=self.dataset_loader.duration,modelname="shortRNN",n_hidden = 128,n_features = 64)
+        self.rnn_long = Model_RNN(input_dim = self.dataset_loader.num_attribute_long,output_dim = self.numClasses,duration=self.dataset_loader.duration_long,modelname="longRNN",n_hidden = 128,n_features = 64)
         self.concated_features = tf.concat([self.rnn.output_features,self.rnn_long.output_features],1)
         print(self.concated_features)
 
-        self.W = tf.get_variable(name ='weights',shape=[self.concated_features.shape[1],1], initializer=xavier_initializer())
-        self.B = tf.get_variable(name='weights_b', shape=[1], initializer=xavier_initializer())
-
-        self.model_logits = tf.matmul(self.concated_features,self.W)*self.B
+        fc_hidden = tf.layers.dense(self.concated_features, units=128, activation=tf.nn.relu)
+        self.model_logits = tf.layers.dense(fc_hidden, units=1, activation=None)
         self.model_logits_relu = tf.nn.relu(self.model_logits)
-        self.Y = tf.placeholder(tf.float32, shape=[None,1])
+        self.Y = tf.placeholder(tf.float32, shape=[None, 1])
 
+        '''
+        self.W = tf.get_variable(name ='weights',shape=[self.concated_features.shape[1],128], initializer=xavier_initializer())
+        self.B = tf.get_variable(name='weights_b', shape=[1], initializer=xavier_initializer())
+        self.fc1 = tf.matmul(self.concated_features,self.W)*self.B
+        self.W = tf.get_variable(name ='weights',shape=[self.concated_features.shape[1],128], initializer=xavier_initializer())
+        self.B = tf.get_variable(name='weights_b', shape=[1], initializer=xavier_initializer())
+        self.model_logits = tf.matmul(self.concated_features,self.W)*self.B
+        self.model_logits = tf.matmul(self.concated_features,self.W)*self.B
+        '''
 
 
 
@@ -54,9 +61,9 @@ class Trainer:
             lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in vars]) * 0.0005
 
         with tf.name_scope("tendancy_loss") as scope:
-            y_t = tf.slice(self.Y,[0,0],[self.batchSize-1,1]) - tf.slice(self.Y,[1,0],[self.batchSize-1,1])
-            ypred_t = tf.slice(self.model_logits, [0, 0], [self.batchSize - 1, 1]) - tf.slice(self.model_logits, [1, 0],
-                                                                               [self.batchSize - 1, 1])
+            y_t = tf.strided_slice(self.Y,[0,0],[self.batchSize-1,1],strides =[2,1]) - tf.strided_slice(self.Y,[1,0],[self.batchSize,1],strides=[2,1])
+            ypred_t = tf.strided_slice(self.model_logits, [0, 0], [self.batchSize - 1, 1],strides=[2,1]) - tf.strided_slice(self.model_logits, [1, 0],
+                                                                               [self.batchSize, 1],strides=[2,1])
             tlossrate = 0
             tloss = tf.reduce_mean(tf.abs(y_t-ypred_t))
 
@@ -102,14 +109,14 @@ class Trainer:
 
             loss_hist_summary = tf.summary.scalar('training_loss_hist', loss)
             merged = tf.summary.merge_all()
-            writer_acc_loss = tf.summary.FileWriter("./board_rrn_rnn_long/acc_loss", sess.graph)
+            writer_acc_loss = tf.summary.FileWriter("./board_rrn_rnn_long_1/acc_loss", sess.graph)
 
             prediction_hist = tf.placeholder(tf.float32)
             prediction_hist_summary = tf.summary.scalar('pred_hist', prediction_hist)
             prediction_hist_merged = tf.summary.merge([prediction_hist_summary])
 
-            writer_pred = tf.summary.FileWriter("./board_rrnw_rrn_rnn_long/pred", sess.graph)
-            writer_pred_label = tf.summary.FileWriter("./board_rrn_rnn_long/pred_label", sess.graph)
+            writer_pred = tf.summary.FileWriter("./board_rrnw_rrn_rnn_long_1/pred", sess.graph)
+            writer_pred_label = tf.summary.FileWriter("./board_rrn_rnn_long_1/pred_label", sess.graph)
 
 
         #===============================================
@@ -172,8 +179,8 @@ class Trainer:
                 tloss_list = []
                 histloginterval = 100
                 if (e % histloginterval == 0):
-                    writer_pred = tf.summary.FileWriter("./board_rrnw_rrn_rnn_long/pred" + str(e), sess.graph)
-                    writer_pred_label = tf.summary.FileWriter("./board_rrnw_rrn_rnn_long/pred_label" + str(e), sess.graph)
+                    writer_pred = tf.summary.FileWriter("./board_rrnw_rrn_rnn_long_1/pred" + str(e), sess.graph)
+                    writer_pred_label = tf.summary.FileWriter("./board_rrnw_rrn_rnn_long_1/pred_label" + str(e), sess.graph)
 
                 for i in range(int(len(self.testset) / self.batchSize_test)):
                     # == test batch load

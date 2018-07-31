@@ -8,20 +8,22 @@ class Trainer:
     def __init__(self):
         #parameters
         self.totalEpoch = 5000
-        self.batchSize = 64
-        self.batchSize_test = 64
+        self.batchSize = 128
+        self.batchSize_test = 128
 
 
         #dataset
         self.dataset_loader = Dataset_loader(pvdir = "./data/pv_2015_2016_gy_processed.csv",duration_hour =6,attList=[5,6,7,8,9])
         self.trainset,self.testset = self.dataset_loader.getDataset(shuffle = True,batch_size = self.batchSize)
+        print("rnn_short_duration_6_fc2_n_hidden128")
 
         print(len(self.trainset))
         print(len(self.testset))
 
         #model tensor :
         self.numClasses = 1
-        self.model = Model_RNN(input_dim = self.dataset_loader.num_attribute,output_dim = self.numClasses,duration=self.dataset_loader.duration)
+        self.model = Model_RNN(input_dim = self.dataset_loader.num_attribute,output_dim = self.numClasses,duration=self.dataset_loader.duration
+                               ,n_hidden = 128, n_features = 128)
         self.Y = tf.placeholder(tf.float32, shape=[None,1])
 
 
@@ -43,9 +45,9 @@ class Trainer:
             lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in vars]) * 0.0005
 
         with tf.name_scope("tendancy_loss") as scope:
-            y_t = tf.slice(self.Y,[0,0],[self.batchSize-1,1]) - tf.slice(self.Y,[1,0],[self.batchSize-1,1])
-            ypred_t = tf.slice(self.model.logits, [0, 0], [self.batchSize - 1, 1]) - tf.slice(self.model.logits, [1, 0],
-                                                                               [self.batchSize - 1, 1])
+            y_t = tf.strided_slice(self.Y,[0,0],[self.batchSize-1,1],strides =[2,1]) - tf.strided_slice(self.Y,[1,0],[self.batchSize,1],strides=[2,1])
+            ypred_t = tf.strided_slice(self.model.logits, [0, 0], [self.batchSize - 1, 1],strides=[2,1]) - tf.strided_slice(self.model.logits, [1, 0],
+                                                                               [self.batchSize, 1],strides=[2,1])
             tlossrate = 0
             tloss = tf.reduce_mean(tf.abs(y_t-ypred_t))
 
@@ -95,14 +97,14 @@ class Trainer:
 
             loss_hist_summary = tf.summary.scalar('training_loss_hist', loss)
             merged = tf.summary.merge_all()
-            writer_acc_loss = tf.summary.FileWriter("./board_rrnw_tl_rnnshort/acc_loss", sess.graph)
+            writer_acc_loss = tf.summary.FileWriter("./board_rrnw_tl_rnnshort_1/acc_loss", sess.graph)
 
             prediction_hist = tf.placeholder(tf.float32)
             prediction_hist_summary = tf.summary.scalar('pred_hist', prediction_hist)
             prediction_hist_merged = tf.summary.merge([prediction_hist_summary])
 
-            writer_pred = tf.summary.FileWriter("./board_rrnw_tl_rnnshort/pred", sess.graph)
-            writer_pred_label = tf.summary.FileWriter("./board_rrnw_tl_rnnshort/pred_label", sess.graph)
+            writer_pred = tf.summary.FileWriter("./board_rrnw_tl_rnnshort_1/pred", sess.graph)
+            writer_pred_label = tf.summary.FileWriter("./board_rrnw_tl_rnnshort_1/pred_label", sess.graph)
 
 
         #===============================================
@@ -161,8 +163,8 @@ class Trainer:
                 tloss_list = []
                 histloginterval = 100
                 if (e % histloginterval == 0):
-                    writer_pred = tf.summary.FileWriter("./board_rrnw_tl_rnnshort/pred" + str(e), sess.graph)
-                    writer_pred_label = tf.summary.FileWriter("./board_rrnw_tl_rnnshort/pred_label" + str(e), sess.graph)
+                    writer_pred = tf.summary.FileWriter("./board_rrnw_tl_rnnshort_1/pred" + str(e), sess.graph)
+                    writer_pred_label = tf.summary.FileWriter("./board_rrnw_tl_rnnshort_1/pred_label" + str(e), sess.graph)
 
                 for i in range(int(len(self.testset) / self.batchSize_test)):
                     # == test batch load

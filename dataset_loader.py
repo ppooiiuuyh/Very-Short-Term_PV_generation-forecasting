@@ -65,14 +65,15 @@ class Dataset_loader:
         return dataset
 
 
-    def getDataset(self,shuffle = False,seed = 10, batch_size=64):
+    def getDataset(self,shuffle = False,seed = 10, batch_size=128):
         trainset = []
         testset = []
 
+        self.dataset = self.dataset[:len(self.dataset) - len(self.dataset)%batch_size]
         if(shuffle == True):
             np.random.seed(seed)
 
-            shuffle_chunksize = batch_size
+            shuffle_chunksize = 2
             p = np.random.permutation(int(len(self.dataset) / shuffle_chunksize))
             p2 = []
             for p_ in p:
@@ -80,9 +81,6 @@ class Dataset_loader:
                     p2.append(p_ * shuffle_chunksize + i)
             self.dataset = np.array(self.dataset)[p2]
 
-
-            self.dataset = np.array(self.dataset)[p2]
-            p = np.random.permutation(len(self.dataset))
 
 
 

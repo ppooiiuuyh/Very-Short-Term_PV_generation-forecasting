@@ -54,9 +54,9 @@ class Trainer:
             lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in vars]) * 0.0005
 
         with tf.name_scope("tendancy_loss") as scope:
-            y_t = tf.slice(self.Y,[0,0],[self.batchSize-1,1]) - tf.slice(self.Y,[1,0],[self.batchSize-1,1])
-            ypred_t = tf.slice(self.model_logits, [0, 0], [self.batchSize - 1, 1]) - tf.slice(self.model_logits, [1, 0],
-                                                                               [self.batchSize - 1, 1])
+            y_t = tf.strided_slice(self.Y,[0,0],[self.batchSize-1,1],strides =[2,1]) - tf.strided_slice(self.Y,[1,0],[self.batchSize,1],strides=[2,1])
+            ypred_t = tf.strided_slice(self.model_logits, [0, 0], [self.batchSize - 1, 1],strides=[2,1]) - tf.strided_slice(self.model_logits, [1, 0],
+                                                                               [self.batchSize, 1],strides=[2,1])
             tlossrate = 0
             tloss = tf.reduce_mean(tf.abs(y_t-ypred_t))
 
@@ -116,6 +116,24 @@ class Trainer:
         # 3.2. train loop
         #===============================================
             for e in range(self.totalEpoch):
+            # ...........................
+            # shuffle trainset
+            # ...........................
+                '''
+                p = np.random.permutation(int(len(self.trainset) / self.batchSize))
+                p2 = []
+                for p_ in p:
+                    for i in range(self.batchSize):
+                        p2.append(p_ * self.batchSize + i)
+                self.trainset = np.array(self.trainset)[p2]
+                '''
+                shuffle_chunksize = 1
+                p = np.random.permutation(int(len(self.trainset) / shuffle_chunksize))
+                p2 = []
+                for p_ in p:
+                    for i in range(shuffle_chunksize):
+                        p2.append(p_ * shuffle_chunksize + i)
+                self.trainset = np.array(self.trainset)[p2]
             # ..........................
             # 3.2.1 학습
             # .........................
